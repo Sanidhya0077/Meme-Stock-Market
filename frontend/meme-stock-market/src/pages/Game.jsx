@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -10,6 +10,7 @@ import {
 
 export default function Game() {
   // Game state
+  const ws = useRef(null);
   const [balance, setBalance] = useState(10000);
   const [portfolio, setPortfolio] = useState({ DOGE: 0, GME: 0 });
   const [stocks, setStocks] = useState({
@@ -27,6 +28,22 @@ export default function Game() {
   const [isTablet, setIsTablet] = useState(
     window.innerWidth >= 768 && window.innerWidth < 1024
   );
+
+  useEffect(() => {
+    // Connect to WebSocket
+    ws.current = new WebSocket("ws://localhost:8000/ws");
+
+    ws.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === "market_update") {
+        setStocks(data.data);
+      }
+    };
+
+    return () => {
+      if (ws.current) ws.current.close();
+    };
+  }, []);
 
   // Handle window resize
   useEffect(() => {
